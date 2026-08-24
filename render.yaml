@@ -2,6 +2,7 @@ services:
   - type: web
     name: peintpro-cloud-api
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app:api_app --host 0.0.0.0 --port $PORT
     envVars:
@@ -12,5 +13,6 @@ services:
 
 databases:
   - name: peintpro-db
+    plan: free
     databaseName: peintpro
     user: peintpro_user
