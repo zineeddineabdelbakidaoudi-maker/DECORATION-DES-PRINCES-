@@ -17,8 +17,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
 
-from utils.format import fmt_price, fmt_date
-from core.signals import signals
+
+def fmt_price(value):
+    try:
+        return f"{float(value):,.2f}".replace(",", " ") + " DA"
+    except:
+        return f"{value} DA"
+
 
 logger = logging.getLogger("PeintPro.MobileAPI")
 
@@ -185,7 +190,7 @@ def api_update_product_stock(data: Dict[str, Any] = Body(...)):
         conn.commit()
         conn.close()
 
-        signals.product_updated.emit()
+        pass # No GUI signals in cloud
         return {"status": "success", "message": "Stock mis à jour !"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -271,8 +276,8 @@ def api_create_sale(data: Dict[str, Any] = Body(...)):
         conn.commit()
         conn.close()
 
-        signals.sale_completed.emit()
-        signals.product_updated.emit()
+        pass # No GUI signals in cloud
+        pass # No GUI signals in cloud
         return {"status": "success", "sale_id": sale_id, "grand_total": grand_total}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -384,7 +389,7 @@ def api_record_client_versement(data: Dict[str, Any] = Body(...)):
         conn.commit()
         conn.close()
 
-        signals.debt_updated.emit()
+        pass # No GUI signals in cloud
         return {"status": "success", "message": "Versement enregistré !"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -411,7 +416,7 @@ def api_record_supplier_versement(data: Dict[str, Any] = Body(...)):
         conn.commit()
         conn.close()
 
-        signals.purchase_completed.emit()
+        pass # No GUI signals in cloud
         return {"status": "success", "message": "Versement fournisseur enregistré !"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
