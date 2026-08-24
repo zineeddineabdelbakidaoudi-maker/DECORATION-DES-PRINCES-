@@ -27,6 +27,19 @@ def fmt_price(value):
 
 logger = logging.getLogger("PeintPro.MobileAPI")
 
+
+def get_connection():
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url: raise Exception("DATABASE_URL missing")
+    conn = psycopg2.connect(db_url)
+    conn.cursor_factory = psycopg2.extras.RealDictCursor
+    return conn
+
+def exec_query(c, query, params=()):
+    pg_query = query.replace("?", "%s")
+    c.execute(pg_query, params)
+    return c
+
 api_app = FastAPI(title="PeintPro Mobile API", version="1.0")
 
 
