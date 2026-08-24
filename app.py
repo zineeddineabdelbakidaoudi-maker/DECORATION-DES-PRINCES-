@@ -558,9 +558,9 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
             SELECT COALESCE(SUM(
                 (si.unit_price -
                     CASE
-                        WHEN si.unit_cost_price > 0 THEN si.unit_cost_price
-                        WHEN p.buy_price > 0 AND si.unit_type = 'PCS' THEN p.buy_price
-                        WHEN p.buy_price_per_kg > 0 AND si.unit_type = 'KG' THEN p.buy_price_per_kg
+                        WHEN si.unit_cost_price > 0 THEN (CASE WHEN si.unit_cost_price > si.unit_price THEN si.unit_price ELSE si.unit_cost_price END)
+                        WHEN p.buy_price > 0 AND si.unit_type = 'PCS' THEN (CASE WHEN p.buy_price > si.unit_price THEN si.unit_price ELSE p.buy_price END)
+                        WHEN p.buy_price_per_kg > 0 AND si.unit_type = 'KG' THEN (CASE WHEN p.buy_price_per_kg > si.unit_price THEN si.unit_price ELSE p.buy_price_per_kg END)
                         ELSE 0.0
                     END
                 ) * si.quantity
