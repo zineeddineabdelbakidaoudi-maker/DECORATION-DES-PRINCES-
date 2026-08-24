@@ -832,14 +832,8 @@ def api_sync_receive(payload: Dict[str, List[Dict[str, Any]]] = Body(...)):
 # ══════════════════════════════════════════════════════════════════
 
 # Resolve web_mobile path: works both in development and PyInstaller EXE
-if getattr(sys, 'frozen', False):
-    # PyInstaller EXE: files are extracted into sys._MEIPASS
-    _base_dir = sys._MEIPASS
-else:
-    # Development: services/ is one level below project root
-    _base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-web_dir = os.path.join(_base_dir, "web_mobile")
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+web_dir = os.path.join(_base_dir, \"web_mobile\")
 os.makedirs(web_dir, exist_ok=True)
 
 # Mount web_mobile as /static AND serve individual files at root
