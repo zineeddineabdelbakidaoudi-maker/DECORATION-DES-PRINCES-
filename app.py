@@ -29,6 +29,48 @@ logger = logging.getLogger("PeintPro.MobileAPI")
 
 api_app = FastAPI(title="PeintPro Mobile API", version="1.0")
 
+
+def init_db():
+    schema = """
+CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY, name TEXT, created_at TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT, category_id INTEGER, barcode TEXT, unit_type TEXT, sell_price NUMERIC, price_per_kg NUMERIC, buy_price NUMERIC, buy_price_per_kg NUMERIC, stock_qty NUMERIC, bidon_capacity NUMERIC, closed_bidons INTEGER, open_bidon_kg NUMERIC, allows_preparation INTEGER, preparation_cost_per_kg NUMERIC, active INTEGER, created_at TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY, name TEXT, phone TEXT, address TEXT, created_at TEXT, avoir NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY, client_id INTEGER, location_name TEXT, status TEXT, created_at TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS transactions_log (id INTEGER PRIMARY KEY, date TEXT, type TEXT, description TEXT, amount NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS sales (id INTEGER PRIMARY KEY, sale_date TEXT, total NUMERIC, preparation_type TEXT, preparation_total NUMERIC, remise NUMERIC, grand_total NUMERIC, payment_method TEXT, client_id INTEGER, project_id INTEGER, client_name TEXT, is_debt INTEGER, notes TEXT, versement_total NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS sale_items (id INTEGER PRIMARY KEY, sale_id INTEGER, product_id INTEGER, product_name TEXT, unit_type TEXT, quantity NUMERIC, unit_price NUMERIC, unit_cost_price NUMERIC, subtotal NUMERIC, has_preparation INTEGER, preparation_cost NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS purchases (id INTEGER PRIMARY KEY, supplier TEXT, purchase_date TEXT, total NUMERIC, notes TEXT, supplier_id INTEGER, paid_amount NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS purchase_items (id INTEGER PRIMARY KEY, purchase_id INTEGER, product_id INTEGER, product_name TEXT, quantity NUMERIC, unit_price NUMERIC, subtotal NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS debts (id INTEGER PRIMARY KEY, client_id INTEGER, project_id INTEGER, client_name TEXT, phone TEXT, sale_id INTEGER, amount NUMERIC, paid NUMERIC, remaining NUMERIC, status TEXT, created_at TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS debt_payments (id INTEGER PRIMARY KEY, debt_id INTEGER, amount NUMERIC, payment_date TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS suppliers (id INTEGER PRIMARY KEY, name TEXT, phone TEXT, address TEXT, initial_debt NUMERIC, created_at TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS supplier_payments (id INTEGER PRIMARY KEY, supplier_id INTEGER, amount NUMERIC, payment_date TEXT, notes TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS partner_accounts (id INTEGER PRIMARY KEY, partner_name TEXT, transaction_type TEXT, amount NUMERIC, date TEXT, notes TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS supplier_returns (id INTEGER PRIMARY KEY, supplier_id INTEGER, supplier TEXT, return_date TEXT, total NUMERIC, notes TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS supplier_return_items (id INTEGER PRIMARY KEY, return_id INTEGER, product_id INTEGER, product_name TEXT, quantity NUMERIC, unit_price NUMERIC, subtotal NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS held_carts (id INTEGER PRIMARY KEY, created_at TEXT, cart_data TEXT, notes TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS inventories (id INTEGER PRIMARY KEY, date TEXT, status TEXT, notes TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS inventory_items (id INTEGER PRIMARY KEY, inventory_id INTEGER, product_id INTEGER, expected_qty NUMERIC, actual_qty NUMERIC, diff_qty NUMERIC, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS caisse_ouverture (id INTEGER PRIMARY KEY, date TEXT, montant_initial NUMERIC, notes TEXT, created_at TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY, expense_date TEXT, category TEXT, amount NUMERIC, notes TEXT, created_at TEXT, sync_status INTEGER, cloud_id INTEGER, updated_at TEXT);
+    """
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        for q in schema.split(";"):
+            if q.strip():
+                c.execute(q)
+        conn.commit()
+        conn.close()
+        print("Schema initialized!")
+    except Exception as e:
+        print(f"Schema init error: {e}")
+
+@api_app.on_event("startup")
+def startup_event():
+    init_db()
+
+
 # Enable CORS for local Wi-Fi and remote tunnels
 api_app.add_middleware(
     CORSMiddleware,
