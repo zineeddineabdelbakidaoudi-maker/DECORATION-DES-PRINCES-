@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0F172A">
+  <title>PeintPro Mobile</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="app-header">
+    <div class="app-title">
+      🎨 <span>PeintPro</span>
+    </div>
+    <div class="status-badge" id="conn-status">● En Ligne (Local)</div>
+  </header>
+
+  <!-- Container Views -->
+  <main class="container">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="tab-view active">
+      <div class="grid-2">
+        <div class="kpi-card">
+          <div class="kpi-title">Ventes Aujourd'hui</div>
+          <div class="kpi-val color-blue" id="dash-sales">0 DA</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">Encaissement Net</div>
+          <div class="kpi-val color-green" id="dash-encaisse">0 DA</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="kpi-card">
+          <div class="kpi-title">Dettes Clients</div>
+          <div class="kpi-val color-red" id="dash-debts">0 DA</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">Stock Faible</div>
+          <div class="kpi-val" id="dash-stock-low">0</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <h3 style="font-size: 16px; margin-bottom: 10px;">Dernières Transactions</h3>
+        <div id="recent-sales-list">
+          <div style="color: var(--text-sub); text-align: center; padding: 20px;">Chargement...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: STOCK & PRODUITS -->
+    <section id="tab-stock" class="tab-view">
+      <div class="form-group" style="position: relative;">
+        <input type="text" id="stock-search" class="form-input" placeholder="🔍 Rechercher produit ou scanner code-barres...">
+      </div>
+
+      <div id="stock-list">
+        <div style="color: var(--text-sub); text-align: center; padding: 20px;">Chargement des produits...</div>
+      </div>
+    </section>
+
+    <!-- TAB 3: NOUVELLE VENTE / DEVIS -->
+    <section id="tab-pos" class="tab-view">
+      <h3 style="font-size: 18px; margin-bottom: 14px;">🛒 Vente / Devis Mobile</h3>
+
+      <div class="form-group">
+        <label class="form-label">Client :</label>
+        <select id="pos-client-select" class="form-select">
+          <option value="">Client Passager (Comptoir)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Sélectionner Produit :</label>
+        <select id="pos-prod-select" class="form-select">
+          <option value="">Choisir un produit...</option>
+        </select>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Quantité :</label>
+          <input type="number" id="pos-qty" class="form-input" value="1.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prix Unit. (DA) :</label>
+          <input type="number" id="pos-price" class="form-input" value="0.00" step="10">
+        </div>
+      </div>
+
+      <button id="btn-add-pos-item" class="btn btn-primary" style="margin-bottom: 16px;">
+        ➕ Ajouter l'article au panier
+      </button>
+
+      <h4 style="font-size: 15px; margin-bottom: 8px;">Panier actuel :</h4>
+      <div id="cart-list" style="margin-bottom: 16px;">
+        <div style="color: var(--text-sub); text-align: center; padding: 12px; border: 1px dashed var(--border-color); border-radius: 10px;">Le panier est vide</div>
+      </div>
+
+      <div class="kpi-card" style="margin-bottom: 16px;">
+        <div class="kpi-title">Total Vente</div>
+        <div class="kpi-val color-blue" id="cart-total">0.00 DA</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mode de Paiement :</label>
+        <select id="pos-payment-mode" class="form-select">
+          <option value="cash">Payer Cash Total</option>
+          <option value="credit">Crédit / Versement Partiel</option>
+        </select>
+      </div>
+
+      <div id="versement-input-group" class="form-group" style="display: none;">
+        <label class="form-label">Montant Versé (DA) :</label>
+        <input type="number" id="pos-versement" class="form-input" value="0.00" step="100">
+      </div>
+
+      <button id="btn-submit-sale" class="btn btn-success" style="margin-bottom: 10px;">
+        ✅ Valider la Vente Mobile
+      </button>
+
+      <button id="btn-print-devis" class="btn btn-primary" style="background-color: #3B82F6;">
+        📄 Imprimer Devis / Proforma
+      </button>
+    </section>
+
+    <!-- TAB 4: VERSEMENTS & DETTES -->
+    <section id="tab-payments" class="tab-view">
+      <h3 style="font-size: 18px; margin-bottom: 14px;">💳 Encaissement des Versements</h3>
+
+      <div class="form-group">
+        <label class="form-label">Type de Versement :</label>
+        <select id="vers-type" class="form-select">
+          <option value="client">Versement Client (Règlement Dette)</option>
+          <option value="supplier">Versement Fournisseur (Paiement Achat)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="group-vers-client">
+        <label class="form-label">Client :</label>
+        <select id="vers-client-select" class="form-select">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="group-vers-supplier" style="display: none;">
+        <label class="form-label">Fournisseur :</label>
+        <select id="vers-supp-select" class="form-select">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Montant du Versement (DA) :</label>
+        <input type="number" id="vers-amount" class="form-input" placeholder="Ex: 5000" step="100">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes / Observation (Optionnel) :</label>
+        <input type="text" id="vers-notes" class="form-input" placeholder="Ex: Espèces, Chèque n°...">
+      </div>
+
+      <button id="btn-submit-versement" class="btn btn-success">
+        💾 Enregistrer le Versement
+      </button>
+    </section>
+
+    <!-- TAB 5: RAPPORTS -->
+    <section id="tab-reports" class="tab-view">
+      <h3 style="font-size: 18px; margin-bottom: 14px;">📊 Rapports Financiers</h3>
+      <div class="form-group">
+        <select id="report-period" class="form-select">
+          <option value="today">Aujourd'hui</option>
+          <option value="week">Cette Semaine</option>
+          <option value="month">Ce Mois</option>
+          <option value="all">Tout</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+      </div>
+      <div id="report-custom-dates" style="display: none;" class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Du :</label>
+          <input type="date" id="report-date-from" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Au :</label>
+          <input type="date" id="report-date-to" class="form-input">
+        </div>
+      </div>
+      <button id="btn-refresh-report" class="btn btn-primary" style="margin-bottom: 16px;">Actualiser</button>
+
+      <div class="grid-2">
+        <div class="kpi-card"><div class="kpi-title">Chiffre d'Affaires</div><div class="kpi-val color-blue" id="rep-ca">0 DA</div></div>
+        <div class="kpi-card"><div class="kpi-title">Achats</div><div class="kpi-val color-red" id="rep-achats">0 DA</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="kpi-card"><div class="kpi-title">Bénéfice Net</div><div class="kpi-val color-green" id="rep-benefice">0 DA</div></div>
+        <div class="kpi-card"><div class="kpi-title">Nb Ventes</div><div class="kpi-val" id="rep-nb-ventes">0</div></div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="kpi-card"><div class="kpi-title">Encaissements</div><div class="kpi-val color-green" id="rep-encaissement">0 DA</div></div>
+        <div class="kpi-card"><div class="kpi-title">Ventes Cash+Vers.</div><div class="kpi-val color-blue" id="rep-ventes-vers">0 DA</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="kpi-card"><div class="kpi-title">Règlement Dettes</div><div class="kpi-val color-blue" id="rep-reglements">0 DA</div></div>
+        <div class="kpi-card"><div class="kpi-title">Trésorerie Nette</div><div class="kpi-val color-green" id="rep-tresorerie">0 DA</div></div>
+      </div>
+
+      <h4 style="margin-top:16px;margin-bottom:8px;">Top Produits</h4>
+      <div id="rep-top-products"></div>
+    </section>
+
+    <!-- TAB 6: FOURNISSEURS -->
+    <section id="tab-suppliers" class="tab-view">
+      <h3 style="font-size: 18px; margin-bottom: 14px;">🚚 Fournisseurs</h3>
+      <div id="supplier-insights-list">Chargement...</div>
+    </section>
+
+    <!-- TAB 7: CLIENTS -->
+    <section id="tab-clients" class="tab-view">
+      <h3 style="font-size: 18px; margin-bottom: 14px;">👥 Clients</h3>
+      <div id="client-insights-list">Chargement...</div>
+    </section>
+
+    <!-- TAB 8: INVENTAIRES -->
+    <section id="tab-inventories" class="tab-view">
+      <h3 style="font-size: 18px; margin-bottom: 14px;">📦 Inventaires</h3>
+      <div class="form-group">
+        <label class="form-label">Comparateur de sessions :</label>
+        <div class="grid-2">
+          <select id="inv-cmp-1" class="form-select"><option value="">Inv 1</option></select>
+          <select id="inv-cmp-2" class="form-select"><option value="">Inv 2</option></select>
+        </div>
+        <button id="btn-compare-inv" class="btn btn-primary" style="margin-top:10px;">Comparer</button>
+      </div>
+      <div id="inv-cmp-results" style="display:none; margin-bottom: 16px;"></div>
+      <h4 style="font-size: 15px; margin-bottom: 8px;">Sessions d'inventaire</h4>
+      <div id="inv-sessions-list">Chargement...</div>
+    </section>
+
+  </main>
+
+  <!-- Stock Quick Edit Modal -->
+  <div id="modal-edit-stock" class="modal-overlay">
+    <div class="modal-sheet">
+      <h3 id="modal-item-title" style="font-size: 18px; margin-bottom: 14px;">Modifier Produit</h3>
+      <input type="hidden" id="edit-prod-id">
+
+      <div class="form-group">
+        <label class="form-label">Quantité en Stock :</label>
+        <input type="number" id="edit-prod-qty" class="form-input" step="1">
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Prix Vente (DA) :</label>
+          <input type="number" id="edit-prod-price" class="form-input" step="10">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prix d'Achat (DA) :</label>
+          <input type="number" id="edit-prod-buy" class="form-input" step="10">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="btn-close-modal" class="btn" style="background: var(--bg-input); color: var(--text-main);">Annuler</button>
+        <button id="btn-save-stock" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plus Menu Modal -->
+  <div id="modal-plus-menu" class="modal-overlay">
+    <div class="modal-sheet">
+      <h3 style="font-size: 18px; margin-bottom: 14px;">Plus d'options</h3>
+      <div class="grid-2" style="gap:12px; margin-bottom: 20px;">
+        <div class="nav-item-plus" data-tab="tab-reports">📊 Rapports</div>
+        <div class="nav-item-plus" data-tab="tab-suppliers">🚚 Fournisseurs</div>
+        <div class="nav-item-plus" data-tab="tab-clients">👥 Clients</div>
+        <div class="nav-item-plus" data-tab="tab-inventories">📦 Inventaires</div>
+        <div class="nav-item-plus" data-tab="tab-payments">💳 Versements</div>
+      </div>
+      <button id="btn-close-plus" class="btn" style="background: var(--bg-input); color: var(--text-main);">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Inventory Detail Modal -->
+  <div id="modal-inv-detail" class="modal-overlay">
+    <div class="modal-sheet" style="max-height: 80vh; overflow-y: auto;">
+      <h3 id="inv-detail-title" style="font-size: 18px; margin-bottom: 14px;">Détails Inventaire</h3>
+      <div id="inv-detail-content"></div>
+      <button id="btn-close-inv" class="btn" style="margin-top:20px; background: var(--bg-input); color: var(--text-main);">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-tab="tab-dashboard">
+      <span class="nav-icon">📊</span>
+      <span>Accueil</span>
+    </div>
+    <div class="nav-item" data-tab="tab-stock">
+      <span class="nav-icon">📦</span>
+      <span>Stock</span>
+    </div>
+    <div class="nav-item" data-tab="tab-pos">
+      <span class="nav-icon">🛒</span>
+      <span>Ventes</span>
+    </div>
+    <div class="nav-item" id="nav-item-plus">
+      <span class="nav-icon">☰</span>
+      <span>Plus</span>
+    </div>
+  </nav>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
