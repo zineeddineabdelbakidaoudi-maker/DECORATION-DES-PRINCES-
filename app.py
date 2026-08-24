@@ -152,29 +152,29 @@ def api_dashboard():
 
         # Encaissement cash today
         exec_query(c, "SELECT COALESCE(SUM(grand_total), 0) FROM sales WHERE is_debt = 0 AND substr(sale_date, 1, 10) = ?", (today_str,))
-        checkout_cash = float(c.fetchone()[0] or 0)
+        checkout_cash = float(list(c.fetchone().values())[0] or 0)
 
         exec_query(c, "SELECT COALESCE(SUM(versement_total), 0) FROM sales WHERE is_debt = 1 AND substr(sale_date, 1, 10) = ?", (today_str,))
-        init_versement = float(c.fetchone()[0] or 0)
+        init_versement = float(list(c.fetchone().values())[0] or 0)
 
         c.execute("""
             SELECT COALESCE(SUM(amount), 0) FROM debt_payments
             WHERE substr(payment_date, 1, 10) = ?
         """, (today_str,))
-        client_reglements = float(c.fetchone()[0] or 0)
+        client_reglements = float(list(c.fetchone().values())[0] or 0)
 
         exec_query(c, "SELECT COALESCE(SUM(amount), 0) FROM supplier_payments WHERE substr(payment_date, 1, 10) = ?", (today_str,))
-        achats_paid = float(c.fetchone()[0] or 0)
+        achats_paid = float(list(c.fetchone().values())[0] or 0)
 
         net_encaissement = (checkout_cash + init_versement + client_reglements) - achats_paid
 
         # Total outstanding debts
         exec_query(c, "SELECT COALESCE(SUM(remaining), 0) FROM debts WHERE status != 'paye'")
-        total_client_debts = float(c.fetchone()[0] or 0)
+        total_client_debts = float(list(c.fetchone().values())[0] or 0)
 
         # Low stock count
         exec_query(c, "SELECT COUNT(*) FROM products WHERE active = 1 AND stock_qty <= 5")
-        low_stock_count = int(c.fetchone()[0] or 0)
+        low_stock_count = int(list(c.fetchone().values())[0] or 0)
 
         conn.close()
         return {
@@ -529,7 +529,7 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
             WHERE payment_method = 'Retour' AND grand_total < 0
               AND substr(sale_date, 1, 10) >= ? AND substr(sale_date, 1, 10) <= ?
         """, (d_from, d_to))
-        client_returns = float(c.fetchone()[0] or 0)
+        client_returns = float(list(c.fetchone().values())[0] or 0)
         revenue_net = revenue - client_returns
 
         # Purchases
@@ -537,13 +537,13 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
             SELECT COALESCE(SUM(total), 0) FROM purchases
             WHERE substr(purchase_date, 1, 10) >= ? AND substr(purchase_date, 1, 10) <= ?
         """, (d_from, d_to))
-        purchases_total = float(c.fetchone()[0] or 0)
+        purchases_total = float(list(c.fetchone().values())[0] or 0)
 
         c.execute("""
             SELECT COALESCE(SUM(total), 0) FROM supplier_returns
             WHERE substr(return_date, 1, 10) >= ? AND substr(return_date, 1, 10) <= ?
         """, (d_from, d_to))
-        supplier_returns_total = float(c.fetchone()[0] or 0)
+        supplier_returns_total = float(list(c.fetchone().values())[0] or 0)
         purchases_net = purchases_total - supplier_returns_total
 
         # Profit = margin + teinte - remises
@@ -564,7 +564,7 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
             WHERE substr(s.sale_date, 1, 10) >= ? AND substr(s.sale_date, 1, 10) <= ?
               AND s.grand_total >= 0 AND s.payment_method != 'Retour'
         """, (d_from, d_to))
-        margin_profit = float(c.fetchone()[0] or 0.0)
+        margin_profit = float(list(c.fetchone().values())[0] or 0.0)
 
         c.execute("""
             SELECT COALESCE(SUM(remise), 0), COALESCE(SUM(preparation_total), 0)
@@ -573,8 +573,8 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
               AND grand_total >= 0 AND payment_method != 'Retour'
         """, (d_from, d_to))
         row_rp = c.fetchone()
-        total_remises = float(row_rp[0] or 0.0)
-        total_prep_profit = float(row_rp[1] or 0.0)
+        total_remises = float(list(row_rp.values())[0] or 0.0)
+        total_prep_profit = float(list(row_rp.values())[1] or 0.0)
         profit = max(0.0, margin_profit + total_prep_profit - total_remises)
 
         # Encaissements
@@ -583,33 +583,33 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
             WHERE is_debt = 0 AND payment_method != 'Retour' AND grand_total >= 0
               AND substr(sale_date, 1, 10) >= ? AND substr(sale_date, 1, 10) <= ?
         """, (d_from, d_to))
-        cash_sales = float(c.fetchone()[0] or 0)
+        cash_sales = float(list(c.fetchone().values())[0] or 0)
 
         c.execute("""
             SELECT COALESCE(SUM(versement_total), 0) FROM sales
             WHERE is_debt = 1 AND versement_total > 0 AND grand_total >= 0
               AND substr(sale_date, 1, 10) >= ? AND substr(sale_date, 1, 10) <= ?
         """, (d_from, d_to))
-        initial_versements = float(c.fetchone()[0] or 0)
+        initial_versements = float(list(c.fetchone().values())[0] or 0)
 
         c.execute("""
             SELECT COALESCE(SUM(dp.amount), 0) FROM debt_payments dp
             WHERE substr(dp.payment_date, 1, 10) >= ? AND substr(dp.payment_date, 1, 10) <= ?
         """, (d_from, d_to))
-        post_reglements = float(c.fetchone()[0] or 0)
+        post_reglements = float(list(c.fetchone().values())[0] or 0)
 
         c.execute("""
             SELECT COALESCE(SUM(ABS(grand_total)), 0) FROM sales
             WHERE payment_method = 'Retour' AND grand_total < 0
               AND substr(sale_date, 1, 10) >= ? AND substr(sale_date, 1, 10) <= ?
         """, (d_from, d_to))
-        client_returns_refunded = float(c.fetchone()[0] or 0)
+        client_returns_refunded = float(list(c.fetchone().values())[0] or 0)
 
         c.execute("""
             SELECT COALESCE(SUM(amount), 0) FROM expenses
             WHERE substr(expense_date, 1, 10) >= ? AND substr(expense_date, 1, 10) <= ?
         """, (d_from, d_to))
-        expenses_total = float(c.fetchone()[0] or 0)
+        expenses_total = float(list(c.fetchone().values())[0] or 0)
 
         total_encaissements = cash_sales + initial_versements + post_reglements - client_returns_refunded - expenses_total
 
@@ -617,7 +617,7 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
             SELECT COALESCE(SUM(amount), 0) FROM supplier_payments
             WHERE substr(payment_date, 1, 10) >= ? AND substr(payment_date, 1, 10) <= ?
         """, (d_from, d_to))
-        supplier_payments_out = float(c.fetchone()[0] or 0)
+        supplier_payments_out = float(list(c.fetchone().values())[0] or 0)
 
         tresorerie_nette = total_encaissements - supplier_payments_out
 
