@@ -37,6 +37,13 @@ def get_connection():
 
 def exec_query(c, query, params=()):
     pg_query = query.replace("?", "%s")
+    pg_query = pg_query.replace("substr(sale_date", "substr(CAST(sale_date AS text)")
+    pg_query = pg_query.replace("substr(s.sale_date", "substr(CAST(s.sale_date AS text)")
+    pg_query = pg_query.replace("substr(payment_date", "substr(CAST(payment_date AS text)")
+    pg_query = pg_query.replace("substr(date", "substr(CAST(date AS text)")
+    pg_query = pg_query.replace("substr(expense_date", "substr(CAST(expense_date AS text)")
+    pg_query = pg_query.replace("substr(return_date", "substr(CAST(return_date AS text)")
+    pg_query = pg_query.replace("IFNULL(", "COALESCE(")
     c.execute(pg_query, params)
     return c
 
