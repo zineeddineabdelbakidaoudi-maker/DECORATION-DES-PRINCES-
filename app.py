@@ -833,7 +833,7 @@ def api_sync_receive(payload: Dict[str, List[Dict[str, Any]]] = Body(...)):
 
 # Resolve web_mobile path: works both in development and PyInstaller EXE
 _base_dir = os.path.dirname(os.path.abspath(__file__))
-web_dir = os.path.join(_base_dir, \"web_mobile\")
+web_dir = os.path.join(_base_dir, "web_mobile")
 os.makedirs(web_dir, exist_ok=True)
 
 # Mount web_mobile as /static AND serve individual files at root
