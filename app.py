@@ -626,7 +626,24 @@ def api_reports(period: str = "today", date_from: Optional[str] = None, date_to:
         """, (d_from, d_to))
         supplier_payments_out = float(list(c.fetchone().values())[0] or 0)
 
-        tresorerie_nette = total_encaissements - supplier_payments_out
+        
+        # 6. Caisse Ouverture
+        exec_query(c, """
+            SELECT COALESCE(SUM(montant_initial), 0) FROM caisse_ouverture
+            WHERE substr(CAST(date AS text), 1, 10) >= %s AND substr(CAST(date AS text), 1, 10) <= %s
+        """, (d_from, d_to))
+        try:
+            row_caisse = c.fetchone()
+            if isinstance(row_caisse, dict):
+                caisse_ouverture_total = float(list(row_caisse.values())[0] or 0)
+            else:
+                caisse_ouverture_total = float(row_caisse[0] or 0)
+        except:
+            caisse_ouverture_total = 0.0
+
+        # Tresorerie nette = Ouverture + Cash In - Cash Out
+        tresorerie_nette = caisse_ouverture_total + total_encaissements - supplier_payments_out
+
 
         # Top 10 products
         c.execute("""
